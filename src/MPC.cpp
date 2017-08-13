@@ -6,8 +6,16 @@
 using CppAD::AD;
 
 // DODO: Set the timestep length and duration
-size_t N = 50;
-double dt = 0.03;
+size_t N = 20;
+double dt = 0.05;
+
+double wcte = 2000;
+double wepsi = 2000;
+double wv = 1;
+double wdelta = 100;
+double wa = 1;
+double wddelta = 200;
+double wda = 10;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -37,26 +45,47 @@ size_t epsi_start = cte_start + N;
 size_t delta_start = epsi_start + N;
 size_t a_start = delta_start + N - 1;
 
+
+
+
 class FG_eval {
  public:
   // Fitted polynomial coefficients
   Eigen::VectorXd coeffs;
-  FG_eval(Eigen::VectorXd coeffs) { this->coeffs = coeffs; }
+
+
+  FG_eval(Eigen::VectorXd coeffs, char** argv) { 
+    this->coeffs = coeffs; 
+
+    /**
+    size_t N = 20;
+    double dt = 0.05;
+
+    double wcte = 2000;
+    double wepsi = 2000;
+    double wv = 1;
+    double wdelta = 100;
+    double wa = 1;
+    double wddelta = 200;
+    double wda = 10;
+    */
+
+    N = atoi(argv[1]);
+    dt = atof(argv[2]);
+    wcte = atof(argv[3]);
+    wepsi = atof(argv[4]);
+    wv = atof(argv[5]);
+    wdelta = atof(argv[6]);
+    wa = atof(argv[7]);
+    wddelta = atof(argv[8]);
+    wda = atof(argv[9]);
+  }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
     // The cost is stored is the first element of `fg`.
     // Any additions to the cost should be added to `fg[0]`.
     fg[0] = 0;
-
-    // weights for various cost aspects
-    double wcte = 1;
-    double wepsi = 1;
-    double wv = 1;
-    double wdelta = 1;
-    double wa = 1;
-    double wddelta = 1;
-    double wda = 1;
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++) {
@@ -133,7 +162,7 @@ class FG_eval {
 MPC::MPC() {}
 MPC::~MPC() {}
 
-vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
+vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs, char** argv) {
   bool ok = true;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
@@ -215,7 +244,7 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
 
 
   // object that computes objective and constraints
-  FG_eval fg_eval(coeffs);
+  FG_eval fg_eval(coeffs, argv);
 
   //
   // NOTE: You don't have to worry about these options

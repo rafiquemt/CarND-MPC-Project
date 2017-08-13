@@ -65,13 +65,13 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
-int main() {
+int main(int argc, char** argv) {
   uWS::Hub h;
 
   // MPC is initialized here!
   MPC mpc;
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc, &argv](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -121,9 +121,12 @@ int main() {
           double throttle_value = 0;
 
           json msgJson;
-          auto result = mpc.Solve(state, coeffs);
-          // TODO: Comeback to this to figure out mpc_x,y yt 13:05 
 
+          auto result = mpc.Solve(state, coeffs, argv);
+          
+          steer_value = ((result[0] * -1) / deg2rad(25)); // flip because simulator uses reverse values
+          throttle_value = result[1];
+          
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
@@ -132,6 +135,13 @@ int main() {
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
+          for (int i = 2; i < result.size(); i++) {
+            if (i % 2 == 0) {
+              mpc_x_vals.push_back(result[i]);
+            } else {
+              mpc_y_vals.push_back(result[i]);
+            }
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line

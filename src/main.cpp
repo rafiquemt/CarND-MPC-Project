@@ -70,8 +70,9 @@ int main(int argc, char** argv) {
 
   // MPC is initialized here!
   MPC mpc;
+  initParams(argv);
 
-  h.onMessage([&mpc, &argv](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -121,8 +122,8 @@ int main(int argc, char** argv) {
           double throttle_value = 0;
 
           json msgJson;
-
-          auto result = mpc.Solve(state, coeffs, argv);
+          cout << "About to solve";
+          auto result = mpc.Solve(state, coeffs);
           
           steer_value = ((result[0] * -1) / deg2rad(25)); // flip because simulator uses reverse values
           throttle_value = result[1];

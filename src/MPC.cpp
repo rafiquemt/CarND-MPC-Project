@@ -16,6 +16,18 @@ double wdelta = 100;
 double wa = 1;
 double wddelta = 200;
 double wda = 10;
+// The solver takes all the state variables and actuator
+// variables in a singular vector. Thus, we should to establish
+// when one variable starts and another ends to make our lifes easier.
+size_t x_start = 0;
+size_t y_start = x_start + N;
+size_t psi_start = y_start + N;
+size_t v_start = psi_start + N;
+size_t cte_start = v_start + N;
+size_t epsi_start = cte_start + N;
+size_t delta_start = epsi_start + N;
+size_t a_start = delta_start + N - 1;
+
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -33,18 +45,35 @@ const double Lf = 2.67;
 // or do something completely different
 double ref_v = 50;
 
-// The solver takes all the state variables and actuator
-// variables in a singular vector. Thus, we should to establish
-// when one variable starts and another ends to make our lifes easier.
-size_t x_start = 0;
-size_t y_start = x_start + N;
-size_t psi_start = y_start + N;
-size_t v_start = psi_start + N;
-size_t cte_start = v_start + N;
-size_t epsi_start = cte_start + N;
-size_t delta_start = epsi_start + N;
-size_t a_start = delta_start + N - 1;
+void initParams (char** argv) {
+  cout << "Extracting params";
+  N = atoi(argv[1]);
+  dt = atof(argv[2]);
+  wcte = atof(argv[3]);
+  wepsi = atof(argv[4]);
+  wv = atof(argv[5]);
+  wdelta = atof(argv[6]);
+  wa = atof(argv[7]);
+  wddelta = atof(argv[8]);
+  wda = atof(argv[9]);
 
+  Eigen::VectorXd t1(9);
+  t1 << N, dt, wcte, wepsi, wv, wdelta, wa, wddelta, wda;
+  cout << "Params:\n";
+  cout << t1;
+
+  // The solver takes all the state variables and actuator
+  // variables in a singular vector. Thus, we should to establish
+  // when one variable starts and another ends to make our lifes easier.
+  x_start = 0;
+  y_start = x_start + N;
+  psi_start = y_start + N;
+  v_start = psi_start + N;
+  cte_start = v_start + N;
+  epsi_start = cte_start + N;
+  delta_start = epsi_start + N;
+  a_start = delta_start + N - 1;
+}
 
 
 
@@ -54,31 +83,8 @@ class FG_eval {
   Eigen::VectorXd coeffs;
 
 
-  FG_eval(Eigen::VectorXd coeffs, char** argv) { 
+  FG_eval(Eigen::VectorXd coeffs) { 
     this->coeffs = coeffs; 
-
-    /**
-    size_t N = 20;
-    double dt = 0.05;
-
-    double wcte = 2000;
-    double wepsi = 2000;
-    double wv = 1;
-    double wdelta = 100;
-    double wa = 1;
-    double wddelta = 200;
-    double wda = 10;
-    */
-
-    N = atoi(argv[1]);
-    dt = atof(argv[2]);
-    wcte = atof(argv[3]);
-    wepsi = atof(argv[4]);
-    wv = atof(argv[5]);
-    wdelta = atof(argv[6]);
-    wa = atof(argv[7]);
-    wddelta = atof(argv[8]);
-    wda = atof(argv[9]);
   }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
@@ -160,9 +166,10 @@ class FG_eval {
 // MPC class definition implementation.
 //
 MPC::MPC() {}
+
 MPC::~MPC() {}
 
-vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs, char** argv) {
+vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   bool ok = true;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
@@ -244,7 +251,7 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs, char** arg
 
 
   // object that computes objective and constraints
-  FG_eval fg_eval(coeffs, argv);
+  FG_eval fg_eval(coeffs);
 
   //
   // NOTE: You don't have to worry about these options

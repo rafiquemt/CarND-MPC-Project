@@ -14,6 +14,7 @@ using json = nlohmann::json;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
+const double Lf = 2.67;
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
@@ -79,6 +80,7 @@ int main(int argc, char** argv) {
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
     cout << sdata << endl;
+    const double actuator_delay_s = 0.100;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -92,6 +94,8 @@ int main(int argc, char** argv) {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta = j[1]["steering_angle"];
+          delta = delta * -1 * deg2rad(25); 
           
           Eigen::VectorXd ptsx_local(ptsx.size());
           Eigen::VectorXd ptsy_local(ptsy.size());
@@ -102,22 +106,18 @@ int main(int argc, char** argv) {
             ptsy_local(i) = (xi * sin(-psi) + yi * cos(-psi));
           }
           auto coeffs = polyfit(ptsx_local, ptsy_local, 3);
-          double x0 = 0;
+          double x0 = 0 + v * actuator_delay_s;
+          // x0 = 0;
           double y0 = 0;
-          double psi0 = 0;
+          double psi0 = 0 + (v/Lf) * delta * actuator_delay_s;
+          // psi0 = 0;
           double v0 = v;
           double cte0 = polyeval(coeffs, x0);
-          double epsi0 = psi0 - atan(coeffs[1]);
+          double epsi0 = psi0 - atan(coeffs[1] + (2 * coeffs[2] * x0) + (3 * coeffs[3] * x0 * x0));
           
           Eigen::VectorXd state(6);
           state << x0, y0, psi0, v0, cte0, epsi0;
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
           double steer_value = 0;
           double throttle_value = 0;
 
@@ -177,7 +177,8 @@ int main(int argc, char** argv) {
           // around the track with 100ms latency.
           //
           // TODO: ***********  UNCOMMENT below before submission
-          // this_thread::sleep_for(chrono::milliseconds(100));
+          long sleep_delay = actuator_delay_s * 1000.0;
+          this_thread::sleep_for(chrono::milliseconds(sleep_delay));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

@@ -56,10 +56,7 @@ void initParams (char** argv) {
   wa = atof(argv[7]);
   wddelta = atof(argv[8]);
   wda = atof(argv[9]);
-<<<<<<< HEAD
-=======
   ref_v = atof(argv[10]);
->>>>>>> 63b3612420d800ec1b2d17903c0cfc43a36efc2d
 
   Eigen::VectorXd t1(9);
   t1 << N, dt, wcte, wepsi, wv, wdelta, wa, wddelta, wda;

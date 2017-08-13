@@ -101,18 +101,29 @@ int main() {
             ptsy_local(i) = (xi * sin(-psi) + yi * cos(-psi));
           }
           auto coeffs = polyfit(ptsx_local, ptsy_local, 3);
-          double 
+          double x0 = 0;
+          double y0 = 0;
+          double psi0 = 0;
+          double v0 = v;
+          double cte0 = polyeval(coeffs, x0);
+          double epsi0 = psi0 - atan(coeffs[1] + (2 * coeffs[2] * x0) + (3 * coeffs[2] * x0 * x0));
           
+          Eigen::VectorXd state(6);
+          state << x0, y0, psi0, v0, cte0, epsi0;
+
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+          double steer_value = 0;
+          double throttle_value = 0;
 
           json msgJson;
+          auto result = mpc.Solve(state, coeffs);
+          // TODO: Comeback to this to figure out mpc_x,y yt 13:05 
+
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
@@ -131,6 +142,12 @@ int main() {
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
+          double poly_inc = 2.5;
+          int num_points = 25;
+          for (int i = 0; i < num_points; i++) {
+            next_x_vals.push_back(i * poly_inc);
+            next_y_vals.push_back(polyeval(coeffs, poly_inc * i));
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line

@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
           double psi0 = 0;
           double v0 = v;
           double cte0 = polyeval(coeffs, x0);
-          double epsi0 = psi0 - atan(coeffs[1] + (2 * coeffs[2] * x0) + (3 * coeffs[2] * x0 * x0));
+          double epsi0 = psi0 - atan(coeffs[1]);
           
           Eigen::VectorXd state(6);
           state << x0, y0, psi0, v0, cte0, epsi0;

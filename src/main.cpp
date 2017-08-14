@@ -175,8 +175,6 @@ int main(int argc, char** argv) {
           //
           // Feel free to play around with this value but should be to drive
           // around the track with 100ms latency.
-          //
-          // TODO: ***********  UNCOMMENT below before submission
           long sleep_delay = actuator_delay_s * 1000.0;
           this_thread::sleep_for(chrono::milliseconds(sleep_delay));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);

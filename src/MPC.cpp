@@ -6,16 +6,18 @@
 using CppAD::AD;
 
 // DODO: Set the timestep length and duration
-size_t N = 20;
-double dt = 0.05;
+size_t N = 10;
+double dt = 0.1;
 
 double wcte = 2000;
 double wepsi = 2000;
 double wv = 1;
 double wdelta = 100;
-double wa = 1;
-double wddelta = 200;
+double wa = 10;
+double wddelta = 10;
 double wda = 10;
+double ref_v = 50;
+
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
 // when one variable starts and another ends to make our lifes easier.
@@ -41,39 +43,37 @@ size_t a_start = delta_start + N - 1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-// TODO: feel free to play around with this
-// or do something completely different
-double ref_v = 50;
+
 
 void initParams (char** argv) {
-  cout << "Extracting params";
-  N = atoi(argv[1]);
-  dt = atof(argv[2]);
-  wcte = atof(argv[3]);
-  wepsi = atof(argv[4]);
-  wv = atof(argv[5]);
-  wdelta = atof(argv[6]);
-  wa = atof(argv[7]);
-  wddelta = atof(argv[8]);
-  wda = atof(argv[9]);
-  ref_v = atof(argv[10]);
+  // // cout << "Extracting params";
+  // N = atoi(argv[1]);
+  // dt = atof(argv[2]);
+  // wcte = atof(argv[3]);
+  // wepsi = atof(argv[4]);
+  // wv = atof(argv[5]);
+  // wdelta = atof(argv[6]);
+  // wa = atof(argv[7]);
+  // wddelta = atof(argv[8]);
+  // wda = atof(argv[9]);
+  // ref_v = atof(argv[10]);
 
-  Eigen::VectorXd t1(9);
-  t1 << N, dt, wcte, wepsi, wv, wdelta, wa, wddelta, wda;
-  cout << "Params:\n";
-  cout << t1;
+  // Eigen::VectorXd t1(9);
+  // t1 << N, dt, wcte, wepsi, wv, wdelta, wa, wddelta, wda;
+  // cout << "Params:\n";
+  // cout << t1;
 
-  // The solver takes all the state variables and actuator
-  // variables in a singular vector. Thus, we should to establish
-  // when one variable starts and another ends to make our lifes easier.
-  x_start = 0;
-  y_start = x_start + N;
-  psi_start = y_start + N;
-  v_start = psi_start + N;
-  cte_start = v_start + N;
-  epsi_start = cte_start + N;
-  delta_start = epsi_start + N;
-  a_start = delta_start + N - 1;
+  // // The solver takes all the state variables and actuator
+  // // variables in a singular vector. Thus, we should to establish
+  // // when one variable starts and another ends to make our lifes easier.
+  // x_start = 0;
+  // y_start = x_start + N;
+  // psi_start = y_start + N;
+  // v_start = psi_start + N;
+  // cte_start = v_start + N;
+  // epsi_start = cte_start + N;
+  // delta_start = epsi_start + N;
+  // a_start = delta_start + N - 1;
 }
 
 
@@ -222,7 +222,6 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   }
 
   // Acceleration/decceleration upper and lower limits.
-  // TODO: Find better values for this in m/s^2
   for (int i = a_start; i < n_vars; i++) {
     vars_lowerbound[i] = -1.0;
     vars_upperbound[i] = 1.0;
@@ -287,11 +286,6 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
 
-  // TODO: Return the first actuator values. The variables can be accessed with
-  // `solution.x[i]`.
-  //
-  // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-  // creates a 2 element double vector.
   vector<double> result;
   result.push_back(solution.x[delta_start]);
   result.push_back(solution.x[a_start]);

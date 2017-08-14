@@ -16,7 +16,7 @@ double wdelta = 2000;
 double wa = 10;
 double wddelta = 2000;
 double wda = 10;
-double ref_v = 80 * 0.44704; // 50mph in to m/s
+double ref_v = 80 * 0.44704; // 80mph in to m/s
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish

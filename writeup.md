@@ -30,7 +30,11 @@ The cost model is defined in `MPC.cpp` line `97-114`. The weights are in line `1
 
 The total forward looking time horizon was picked to be about 1 second. This was done by drawing the waypoint on the screen and looking for a line length that looked reasonably ahead to cover the upcoming road curvature changes. 
 
-The values of `N=10` and `dt=0.1` were chosen because they yielded fast computations with stable responses. Choosing smaller dt values (<0.075) and larger N (>20) values resulted in more instability in the calculated cost function. 
+The values of `N=10` and `dt=0.1` were chosen because they yielded fast computations with stable responses. Choosing smaller dt values (<0.075) and larger N (>20) values resulted in more instability in the calculated cost function.
+
+--- Edit 
+
+Based on review feedback, I reduce cte weight significantly. This helped reduce osciallation. Reducing the dt timestemp and increasing N to have a 1 second horizon `(dt=0.05, N=20)`, resulted in more stable following. Now the car doesn't aggressively try to over-correct if it is off center.
 
 ## Polynomial Fitting & MPC Preprocessing
 
@@ -40,14 +44,19 @@ The waypoint points were fitted to a 3rd degree polynomial. The starting cross t
 
 ## Model Predictive Control with Latency
 
-The 100ms latency was handled by using the motion model to predict the car 100ms into the future without any control input. 
+The latency was handled by using the motion model to predict the car into the future without any control input. 
+
+This was done by timing how long it took from receiving a message from the car to when we send the updated control values. This includes the 100ms sleep timeout and the delay to optimize the cost function. 
 
 Since psi starts out 0 because we've already transformed the coordinates with respect to the car, only the `x` and `psi` state values were transformed given the measured velocity and steering angle
 
 ```
-double x0 = 0 + v * actuator_delay_s;
-double psi0 = 0 + (v/Lf) * delta * actuator_delay_s;
-double epsi0 = psi0 - atan(coeffs[1] + (2 * coeffs[2] * x0) + (3 * coeffs[3] * x0 * x0));
+x0 = x0 + v0 * lastDelayEstimate;
+y0 = y0 + 0;
+psi0 = psi0 + (v0/Lf) * delta * lastDelayEstimate;
+v0 = v0 + 0; // no change assuming 0 acceleration (approx.)
+cte0 = cte0 + v0 * sin(epsi0) * lastDelayEstimate;
+epsi0 = epsi0 + (v0/Lf) * delta * lastDelayEstimate;
 ```
 
 After taking into account the delay, there was some initial oscillation and instability in the response, but it stabilised and the car was able to drive smoothly around the track as can be [seen here](https://drive.google.com/open?id=0B2KVtEVE1lFjOEVfS2JOby15Tzg)

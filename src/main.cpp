@@ -72,15 +72,17 @@ int main(int argc, char** argv) {
   // MPC is initialized here!
   MPC mpc;
   initParams(argv);
+  const double delay_estimate_s = 0.150; // starting delay for 100ms sleep + simulator delay
+  double lastDelayEstimate = delay_estimate_s;
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc, &lastDelayEstimate](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
+    auto start = std::chrono::system_clock::now();
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
     cout << sdata << endl;
-    const double actuator_delay_s = 0.100;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -94,8 +96,9 @@ int main(int argc, char** argv) {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          v = v * 0.44704; // convert from mph to m/s
           double delta = j[1]["steering_angle"];
-          delta = delta * -1 * deg2rad(25); 
+          delta = delta * -1; 
           
           Eigen::VectorXd ptsx_local(ptsx.size());
           Eigen::VectorXd ptsy_local(ptsy.size());
@@ -106,15 +109,21 @@ int main(int argc, char** argv) {
             ptsy_local(i) = (xi * sin(-psi) + yi * cos(-psi));
           }
           auto coeffs = polyfit(ptsx_local, ptsy_local, 3);
-          double x0 = 0 + v * actuator_delay_s;
-          // x0 = 0;
+          double x0 = 0;
           double y0 = 0;
-          double psi0 = 0 + (v/Lf) * delta * actuator_delay_s;
-          // psi0 = 0;
+          double psi0 = 0;
           double v0 = v;
           double cte0 = polyeval(coeffs, x0);
           double epsi0 = psi0 - atan(coeffs[1] + (2 * coeffs[2] * x0) + (3 * coeffs[3] * x0 * x0));
           
+          // transform state forward in time to deal with delay
+          x0 = x0 + v0 * lastDelayEstimate;
+          y0 = y0 + 0;
+          psi0 = psi0 + (v0/Lf) * delta * lastDelayEstimate;
+          v0 = v0 + 0; // no change assuming 0 acceleration (approx.)
+          cte0 = cte0 + v0 * sin(epsi0) * lastDelayEstimate;
+          epsi0 = epsi0 + (v0/Lf) * delta * lastDelayEstimate;
+
           Eigen::VectorXd state(6);
           state << x0, y0, psi0, v0, cte0, epsi0;
 
@@ -175,9 +184,12 @@ int main(int argc, char** argv) {
           //
           // Feel free to play around with this value but should be to drive
           // around the track with 100ms latency.
-          long sleep_delay = actuator_delay_s * 1000.0;
-          this_thread::sleep_for(chrono::milliseconds(sleep_delay));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+          auto end = std::chrono::system_clock::now();
+          std::chrono::duration<double> diff = end - start;
+          lastDelayEstimate = diff.count();
+          cout << "Delay Estimate: " << lastDelayEstimate << endl;
         }
       } else {
         // Manual driving

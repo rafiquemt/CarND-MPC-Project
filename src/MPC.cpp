@@ -6,17 +6,17 @@
 using CppAD::AD;
 
 // DODO: Set the timestep length and duration
-size_t N = 10;
-double dt = 0.1;
+size_t N = 20;
+double dt = 0.050;
 
-double wcte = 2000;
-double wepsi = 2000;
+double wcte = 1;
+double wepsi = 10;
 double wv = 1;
-double wdelta = 100;
+double wdelta = 2000;
 double wa = 10;
-double wddelta = 10;
+double wddelta = 2000;
 double wda = 10;
-double ref_v = 50;
+double ref_v = 80 * 0.44704; // 50mph in to m/s
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -56,7 +56,7 @@ void initParams (char** argv) {
   // wa = atof(argv[7]);
   // wddelta = atof(argv[8]);
   // wda = atof(argv[9]);
-  // ref_v = atof(argv[10]);
+  // ref_v = atof(argv[10]) * 0.44704;
 
   // Eigen::VectorXd t1(9);
   // t1 << N, dt, wcte, wepsi, wv, wdelta, wa, wddelta, wda;
